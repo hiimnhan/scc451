@@ -59,74 +59,17 @@ First, import data file as DataFrame using `pandas` package. We named it `basel_
 *Handling missing data*
 By using `isna()` function of Pandas. We can see that the dataset has no missing value. Code for missing value detection is in @missing-val (@app-code).
 
-
-*Identifying and treating outliers / noise* Outliers are data points that deviate significantly from the overall pattern of the dataset. They can take unusually high or low values compared to the majority of observations, potentially indicating measurement errors, or rare but valid phenomena @hanDataMining2011. In the following step, we will detect potential anomalies across all features and decide on appropriate treatments, such as removal, transformation, or imputation, depending on their impact on the dataset.
-
-There are some techniques to detect anomalies in data. Here we consider four methods commonly used in practice, i.e. Z-score (Standard Deviation Method), IQR Method, Isolation Forest and Modified Z-score (Median Absolute Deviation). The advantages and disadvantages of these methods are listed in @table-outlier-detection. Based on the dataset's mixture of symmetric and heavy-tailed distributions (@fig-distribution), we decide to employ the Modified Z-score for outliers detection task due to its robustness, simplicity and resistant to the influence of outliers (see implemented code and result in @fig-mod-zscore).
-
-The deteted anomalies are categorised into two types: (1) physically impossible values (e.g., negative precipitation, humidity above 100%), (2) reasonable extreme values (e.g., heavy rainfall or strong gusts). Each type is treated differently that the dataset remains both statistically consistent and physically realistic. With the first type, the outliers are replaced with missing values and later imputed using k-Nearest Neighbors (kNN) imputation for its decent performance @jadhavCompareImputation (see code implemented in @fig-outlier-treatment).
-#figure(
-  table(
-    columns: (auto, auto, auto),
-    table.header([Method], [Advantage], [Disadvantages]),
-    [Z-score (Standard Deviation Method)],
-    [
-      Simple and fast to compute.\
-      Works well for approximately normal distributions. \
-      Easy to interpret (values |z| > 3 often flagged).
-    ],
-    [
-      Sensitive to outliers and non-Gaussian data. \
-      Not reliable for skewed or heavy-tailed features.
-    ],
-
-    [IQR Method],
-    [
-      Simple and interpretable. \
-      Robust to outliers; no distributional assumptions. \
-      Suitable for skewed climate data (e.g., precipitation).
-    ],
-    [
-      Univariate only; ignores multivariate interactions. \
-      May flag valid extremes in naturally variable data.
-    ],
-
-    [
-      Isolation Forest,
-      "Randomly partition data; anomalies have shorter average path length."],
-    [
-      Model-free and scalable to large datasets. \
-      Handles non-linear, high-dimensional data. \
-      Works well for mixed seasonal patterns and irregular weather events.
-    ],
-    [
-      Randomness may cause variability between runs. \
-      Requires hyperparameter tuning for small datasets. \
-      Less interpretable than statistical methods.
-    ],
-
-    [Modified Z-score (Median Absolute Deviation)],
-    [
-      Robust to skewness and extreme values. \
-      Non-parametric (no assumption of normality). \
-      Intepretable threshold (|M| > 3.5 commonly used).
-    ],
-    [
-      Univariate: ignores feature correlations. \
-      May miss contextual (multivariate) anomalies
-    ],
-  ),
-  caption: [Anomaly detection methods],
-)<table-outlier-detection>
-
 *Feature Scaling* Because the dataset includes features in different measurement unit (e.g., temperature in °C, humidity in %, pressure in hPa, precipitation in mm, and wind in km/h), directly compare raw values would bias distance-based clustering algorithm. Therefore, feature scaling is applied to bring all variables to comparable baseline and ensure they contribute equally in learning process.
 
-There are three methods considered, including Z-score standardization, Min-max Normalization and Robust Scaling. @table-feature-scaling shows the benefits and tradeoffs of these methods. Among these, Robust Scaling is the most suitable because of its robustness with skewed distribution and outliers (see code implemented in @fig-feature_scaling). @fig-befor-after-scaling shows the differences between before and after scaling. Before scaling, the data distributions are varied among features but after applying Robust Scaling method, we can see mostly distributions now look similar.
-
-#figure(
-  image("feature_scaling.png"),
-  caption: [Before and after scaling],
-)<fig-befor-after-scaling>
+There are three methods considered, including Z-score standardization, Min-max Normalization and Robust Scaling. @table-feature-scaling shows the benefits and tradeoffs of these methods. Among these, Robust Scaling is the most suitable because of its robustness with skewed distribution and outliers (see code implemented in @fig-feature_scaling). All the rest methods are severely impacted by outliers and skewness because they depend on the mean (Z-score standardization) or the min and max of data (Min-max Normalization) @deAmorimTheChoiceOfScaling2023. Robust Scaling is a method that use median and interquartile range (IQR) for standardization. For each feature $x$,
+$
+  x' = frac(x - "median"(x), "IQR"(x))
+$
+where
+$
+  "IQR"(x) = Q_3(x) - Q_1(x)
+$
+The median is less sentitive to outliers than the mean and the IQR measure the spread of the central 50% of data, ignoring extreme values.
 
 #figure(
   table(
@@ -166,9 +109,89 @@ There are three methods considered, including Z-score standardization, Min-max N
   ),
   caption: [Feature Scaling Methods],
 )<table-feature-scaling>
+#figure(
+  image("feature_scaling.png"),
+  caption: [the differences between before and after scaling. Before scaling, the data distributions are varied among features but after applying Robust Scaling method, we can see mostly distributions now look similar.],
+)<fig-befor-after-scaling>
+
+*Identifying and treating outliers / noise* Outliers are data points that deviate significantly from the overall pattern of the dataset. They can take unusually high or low values compared to the majority of observations, potentially indicating measurement errors, or rare but valid phenomena @hanDataMining2011. In the following step, we will detect potential anomalies across all features and decide on appropriate treatments, such as removal, transformation, or imputation, depending on their impact on the dataset.
+According to @dasOutlierDetectionTechniques2022, there are four primary categories of outlier dectection model: (1) Neigborhood-based model, (2) Subspace-based model, (3) Ensemble-based model and (4) Mixed-typed model. Here we analyze four methods corresponding to four categories, i.e. Local Outlier Factor (LOF) (Neigborhood-based), Subspace Outlier Degree (SOD) (Subspace-based), High Contrast Subspace (HiCF) (Ensemble-based) and Link-Based Outlier and Anomaly Detection (LOADED) (Mix-type). Our dataset has only 1750 rows so it is reasonable to choose the LOF method for detecting anomalies for its efficiency with small dataset (@table-outlier-detection). The LOF algorithm is a neigborhood-based detection method which measure how the local density of a data point differs from that of its neighbors @Upadhyaya2012NearestNB. [#text(red)[extend more]]
+
+After detecting
+#figure(
+  table(
+    columns: (auto, auto, auto),
+    table.header([Method / Technique], [Advantages (Strengths)], [Disadvantages (Limitations)]),
+    [Local Outlier Factor (LOF) — Neighborhood-based],
+    [
+      Measures how isolated a point is relative to its neighborhood density.\
+      Handles variable-density datasets effectively.\
+      Can reveal subtle, locally defined anomalies.
+      Work well with small dataset.
+    ],
+    [
+      Time complexity O(n²).\
+      Not well-suited for large-scale datasets.\
+      Requires tuning of neighborhood size and data scaling.
+    ],
+
+    [Subspace Outlier Degree (SOD) — Subspace-based],
+    [
+      Detects anomalies confined to certain feature subspaces.\
+      Effective for correlated, high-dimensional attributes.\
+      Useful when global distance metrics are unreliable.
+    ],
+    [
+      Needs selection of suitable subspaces and thresholds.\
+      Computationally demanding for large datasets.\
+      May underperform if irrelevant dimensions are included.
+    ],
+
+    [High Contrast Subspace (HiCF) — Ensemble-based],
+    [
+      Identifies outliers based on contrasting behavior across subspaces.\
+      Robust for complex, high-dimensional data.\
+      Gains stability through ensemble integration.
+    ],
+    [
+      Computationally expensive due to repeated subspace analysis.\
+      Requires well-defined contrast criteria.\
+      Unsuitable for real-time or streaming applications.
+    ],
+
+    [Link-Based Outlier and Anomaly Detection (LOADED) — Mix-type / Hybrid],
+    [
+      Achieves high detection accuracy and strong true-positive rates.\
+      Supports both categorical and numerical attributes.\
+      Combines diverse detection mechanisms adaptively.
+    ],
+    [
+      Complex model structure with several parameters to tune.\
+      Computational cost not fully reported but expected to be high.\
+      Interpretation can be difficult due to hybrid design.
+    ],
+  ),
+  caption: [Anomaly detection methods],
+)<table-outlier-detection>
+
+
+*Feature selection and extraction* Feature selection and extraction are two important steps in data preprocessing. The goal of these two is to identify and keep only valuable variables that contribute most to algorithm. By applying appropriate methods, we can build a more robust, simpler and less time-consuming as well as outstanding performance model. Feature selection focuses on selecting most relevant features that necessarily involve in predictive model while drop the rest features. Feature extraction means transforming original features that in high-dimensional into new features with lower-dimensional representation without losing any informative value.
+
+In this project, we use Pearson's product-moment correlation coefficient (PMCC) @puthEffectiveUsePearsons2014 for finding the correlation between features. The Pearson correlation method is the most commonly used in practice @nettletonSelectionOfVariables2014. It measures how strongly two variables change together and in what direction. Given two variables $X$ and $Y$,
+$
+  r = frac("cov"(X, Y), sigma_X sigma_Y)
+$
+where $"cov"(X, Y)$ is the covariance between $X$ and $Y$ and $sigma_X$, $sigma_Y$ are the standard deviations of $X$ and $Y$, respectively. The value of $r$ is in range $[-1, 1]$. The higher in value of $r$ the tighter in relationship between $X$ and $Y$. As shown in @fig-corr, temperature features (i.e. `temp_min_c`, `temp_mean_c`, `temp_max_c`) are highly correlated with each other. The pressure features (i.e. `slp_min_hpa`, `slp_max_hpa`, `slp_mean_hpa`) are also correlated. Similarly, wind and gust features are correlated. The rest features are weakly correlated. From this heatmap, we can easily identify which features providing similar information and which are unique. It is useful for feature selection and avoiding redundancy.
+
+#figure(
+  image("corr.png"),
+  caption: [Correlation between features],
+)<fig-corr>
 
 
 #bibliography("refs.bib")
+
+#pagebreak()
 
 #show: appendix
 = Code <app-code>
@@ -180,6 +203,11 @@ There are three methods considered, including Z-score standardization, Min-max N
 #figure(
   image("mod_zscore.png"),
   caption: [Modified Z-score code and result],
+)<fig-mod-zscore>
+
+#figure(
+  image("lof.png"),
+  caption: [Local Outlier Factor (LOF)],
 )<fig-mod-zscore>
 
 #figure(
