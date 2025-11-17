@@ -109,15 +109,21 @@ The median is less sentitive to outliers than the mean and the IQR measure the s
   ),
   caption: [Feature Scaling Methods],
 )<table-feature-scaling>
+
+
+*Identifying and treating outliers / noise* Outliers are data points that deviate significantly from the overall pattern of the dataset. They can take unusually high or low values compared to the majority of observations, potentially indicating measurement errors, or rare but valid phenomena @hanDataMining2011. In the following step, we will detect potential anomalies across all features and decide on appropriate treatments, such as removal, transformation, or imputation, depending on their impact on the dataset.
+According to @dasOutlierDetectionTechniques2022, there are four primary categories of outlier dectection model: (1) Neigborhood-based model, (2) Subspace-based model, (3) Ensemble-based model and (4) Mixed-typed model. Here we analyze four methods corresponding to four categories, i.e. Local Outlier Factor (LOF) (Neigborhood-based), Subspace Outlier Degree (SOD) (Subspace-based), High Contrast Subspace (HiCF) (Ensemble-based) and Link-Based Outlier and Anomaly Detection (LOADED) (Mix-type). Our dataset has only 1750 rows so it is reasonable to choose the LOF method for detecting anomalies for its efficiency with small dataset (@table-outlier-detection). The LOF algorithm @Upadhyaya2012NearestNB is a neigborhood-based detection method which measure how the local density of a data point differs from that of its neighbors. The main idea is to calculate a score which tell us how much sparser a data point compared to its neigbors. A point in a dense region has a local density similar to its neighbors whereas in a sparse region (outlier), it has a local density lower than its neighbors.
+$
+  "LOF Score" approx frac("Average Density of Neighbors", "Density of a Point")
+$
+
+After detecting anomalies with LOF algorithm, a total of 0.74% of samples are marked as outliers. Instead of remove them, which may represent actual rare extreme events, we cap them under its 1st and 99th percentile which is called Winsorization technique. It will limit the effect of extreme values while preserving consistency of the distribution.
+
 #figure(
   image("feature_scaling.png"),
   caption: [the differences between before and after scaling. Before scaling, the data distributions are varied among features but after applying Robust Scaling method, we can see mostly distributions now look similar.],
 )<fig-befor-after-scaling>
 
-*Identifying and treating outliers / noise* Outliers are data points that deviate significantly from the overall pattern of the dataset. They can take unusually high or low values compared to the majority of observations, potentially indicating measurement errors, or rare but valid phenomena @hanDataMining2011. In the following step, we will detect potential anomalies across all features and decide on appropriate treatments, such as removal, transformation, or imputation, depending on their impact on the dataset.
-According to @dasOutlierDetectionTechniques2022, there are four primary categories of outlier dectection model: (1) Neigborhood-based model, (2) Subspace-based model, (3) Ensemble-based model and (4) Mixed-typed model. Here we analyze four methods corresponding to four categories, i.e. Local Outlier Factor (LOF) (Neigborhood-based), Subspace Outlier Degree (SOD) (Subspace-based), High Contrast Subspace (HiCF) (Ensemble-based) and Link-Based Outlier and Anomaly Detection (LOADED) (Mix-type). Our dataset has only 1750 rows so it is reasonable to choose the LOF method for detecting anomalies for its efficiency with small dataset (@table-outlier-detection). The LOF algorithm is a neigborhood-based detection method which measure how the local density of a data point differs from that of its neighbors @Upadhyaya2012NearestNB. [#text(red)[extend more]]
-
-After detecting
 #figure(
   table(
     columns: (auto, auto, auto),
@@ -181,12 +187,27 @@ In this project, we use Pearson's product-moment correlation coefficient (PMCC) 
 $
   r = frac("cov"(X, Y), sigma_X sigma_Y)
 $
-where $"cov"(X, Y)$ is the covariance between $X$ and $Y$ and $sigma_X$, $sigma_Y$ are the standard deviations of $X$ and $Y$, respectively. The value of $r$ is in range $[-1, 1]$. The higher in value of $r$ the tighter in relationship between $X$ and $Y$. As shown in @fig-corr, temperature features (i.e. `temp_min_c`, `temp_mean_c`, `temp_max_c`) are highly correlated with each other. The pressure features (i.e. `slp_min_hpa`, `slp_max_hpa`, `slp_mean_hpa`) are also correlated. Similarly, wind and gust features are correlated. The rest features are weakly correlated. From this heatmap, we can easily identify which features providing similar information and which are unique. It is useful for feature selection and avoiding redundancy.
+where $"cov"(X, Y)$ is the covariance between $X$ and $Y$ and $sigma_X$, $sigma_Y$ are the standard deviations of $X$ and $Y$, respectively. The value of $r$ is in range $[-1, 1]$. The higher in value of $r$ the tighter in relationship between $X$ and $Y$. As shown in @fig-corr, temperature features (i.e. `temp_min_c`, `temp_mean_c`, `temp_max_c`) are highly correlated with each other. The pressure features (i.e. `slp_min_hpa`, `slp_max_hpa`, `slp_mean_hpa`) are also correlated. Similarly, wind and gust features are correlated. The rest features are weakly correlated. From this heatmap, we can easily identify which features providing similar information and which are unique. It is useful for feature selection and avoiding redundancy. From this information, we can easily remove all high correlated columns (see code implemented and columns removed in @fig-remove-high-corr).
+
+We use Principal Component Analysis (PCA) for dimensionality reduction. With `n_components = 6`, we capture approximately 94.6% information (@fig-pca). It helps reduce a cost of computation of the model.
 
 #figure(
   image("corr.png"),
   caption: [Correlation between features],
 )<fig-corr>
+
+#figure(
+  image("pca_explained.png"),
+  caption: [PCA Explained Variance],
+)<fig-pca>
+
+== Clustering
+
+According to @yinRapidReviewClustering2024 @waniComprehensiveAnalysisClustering2024, clustering algorithms can be categorized into seven buckets: (1) Partition-based clustering, (2) Hierarchical clustering, (3) Density-based clustering, (4) Grid-based clustering, (5) Model-based clustering, (6) Graph-based clustering and (7) Deep Learning-based clustering. These models serve in different situations and business based on their characteristics.
+
+To choose suitable algorithms, we look at the structure of the dataset. As shown in @fig-distribution, the dataset contains bimodal variables (temperature), heavily skewed variables (precipitation, snow, wind, gust). We can conclude that the climate data is not spherical, not Gaussian and does not have uniform cluster density.
+
+Here we choose two algorithms for clustering task: K-Means from partition-based approach and HDBSCAN from density-based clustering category. K-Means is included as our baseline due to its simpleness in implementation and commonly used. HDBSCAN @campelloDensityBasedClusteringBased2013 is an algorithm that group points based on the density of the surrounding region. Extending from DBSCAN, it builds a hierarchy of density-based clusters and choose the most stable clusters out of them.
 
 
 #bibliography("refs.bib")
@@ -212,13 +233,18 @@ where $"cov"(X, Y)$ is the covariance between $X$ and $Y$ and $sigma_X$, $sigma_
 
 #figure(
   image("outlier_treatment.png"),
-  caption: [Treating different types of outlier],
+  caption: [Capping extreme values],
 )<fig-outlier-treatment>
 
 #figure(
   image("feature_scaling_code.png"),
   caption: [Feature Scaling],
 )<fig-feature_scaling>
+
+#figure(
+  image("remove_high_corr.png"),
+  caption: [Remove high correlated columns],
+)<fig-remove-high-corr>
 = Table and Figures <app-table>
 
 #figure(
