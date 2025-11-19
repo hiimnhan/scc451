@@ -128,6 +128,7 @@ After detecting anomalies with LOF algorithm, a total of 0.74% of samples are ma
   table(
     columns: (auto, auto, auto),
     table.header([Method / Technique], [Advantages (Strengths)], [Disadvantages (Limitations)]),
+
     [Local Outlier Factor (LOF) — Neighborhood-based],
     [
       Measures how isolated a point is relative to its neighborhood density.\
@@ -209,6 +210,25 @@ To choose suitable algorithms, we look at the structure of the dataset. As shown
 
 Here we choose two algorithms for clustering task: K-Means from partition-based approach and HDBSCAN from density-based clustering category. K-Means is included as our baseline due to its simpleness in implementation and commonly used. HDBSCAN @campelloDensityBasedClusteringBased2013 is an algorithm that group points based on the density of the surrounding region. Extending from DBSCAN, it builds a hierarchy of density-based clusters and choose the most stable clusters out of them.
 
+= Task 2: Image Processing with Deep Neural Networks (DNNs)
+The purpose of this task is to effectively, thoroughly apply pre-trained DNNs for image clustering and classification tasks. In this task, we choose two datasets, i.e. Kaggle: Cats vs Dogs Dataset @catsVsDogs and Food101 @food101. Kaggle: Cats vs Dogs Dataset is a dataset providing a collection of photos about cats and dogs. Statistically, there are 12491 pictures of cat and 12470 images of dog. Food101 includes images of food. With over 100000 files, it is a good set of data for image clustering and classification training.
+
+== Dataset 1: Food101
+=== Data preprocessing
+
+*Image Cleaning* As shown in @fig-food101-corrupt_size, all images are in good quality with various sizes. Therefore we need to resize these images for the sake of consistent input for aftward downstream analysis and model. Here we resize all images to $256 times 256$ dimension and save in `image_resized` folder.
+
+*Noise Removal* Apply Gaussian filter to reduce noise in images.
+
+*Normalization* Normalization is a process that rescale pixel values to a specific range (usually 0-255 to [0-1] range).
+
+#figure(
+  image("food101-image-preprocessed-samples.png"),
+  caption: [Image of some preprocessed samples],
+)<fig-food101-image-preprocessed-samples>
+
+=== Clustering
+
 
 #bibliography("refs.bib")
 
@@ -245,6 +265,11 @@ Here we choose two algorithms for clustering task: K-Means from partition-based 
   image("remove_high_corr.png"),
   caption: [Remove high correlated columns],
 )<fig-remove-high-corr>
+
+#figure(
+  image("food101-corrupt_size.png"),
+  caption: "Code and result for detecting corrupted images and sizes in Food101 dataset.",
+)<fig-food101-corrupt_size>
 = Table and Figures <app-table>
 
 #figure(
@@ -277,6 +302,4 @@ Here we choose two algorithms for clustering task: K-Means from partition-based 
   image("dist_all_features.png"),
   caption: "Distribution of all features",
 )<fig-distribution>
-
-
 
