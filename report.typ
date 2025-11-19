@@ -190,7 +190,7 @@ $
 $
 where $"cov"(X, Y)$ is the covariance between $X$ and $Y$ and $sigma_X$, $sigma_Y$ are the standard deviations of $X$ and $Y$, respectively. The value of $r$ is in range $[-1, 1]$. The higher in value of $r$ the tighter in relationship between $X$ and $Y$. As shown in @fig-corr, temperature features (i.e. `temp_min_c`, `temp_mean_c`, `temp_max_c`) are highly correlated with each other. The pressure features (i.e. `slp_min_hpa`, `slp_max_hpa`, `slp_mean_hpa`) are also correlated. Similarly, wind and gust features are correlated. The rest features are weakly correlated. From this heatmap, we can easily identify which features providing similar information and which are unique. It is useful for feature selection and avoiding redundancy. From this information, we can easily remove all high correlated columns (see code implemented and columns removed in @fig-remove-high-corr).
 
-We use Principal Component Analysis (PCA) for dimensionality reduction. With `n_components = 6`, we capture approximately 94.6% information (@fig-pca). It helps reduce a cost of computation of the model.
+We use Principal Component Analysis (PCA) for dimensionality reduction. With `n_components = 4`, we capture approximately 90% information (@fig-pca). It helps reduce a cost of computation of the model.
 
 #figure(
   image("corr.png"),
