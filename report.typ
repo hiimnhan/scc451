@@ -1,4 +1,7 @@
 #import "@preview/charged-ieee:0.1.4": ieee
+#import "@preview/algorithmic:1.0.6"
+#import algorithmic: algorithm-figure, style-algorithm
+#show: style-algorithm
 
 #let appendix(body) = {
   set heading(numbering: "A.1", supplement: [Appendix])
@@ -208,7 +211,69 @@ According to @yinRapidReviewClustering2024 @waniComprehensiveAnalysisClustering2
 
 To choose suitable algorithms, we look at the structure of the dataset. As shown in @fig-distribution, the dataset contains bimodal variables (temperature), heavily skewed variables (precipitation, snow, wind, gust). We can conclude that the climate data is not spherical, not Gaussian and does not have uniform cluster density.
 
-Here we choose two algorithms for clustering task: K-Means from partition-based approach and HDBSCAN from density-based clustering category. K-Means is included as our baseline due to its simpleness in implementation and commonly used. HDBSCAN @campelloDensityBasedClusteringBased2013 is an algorithm that group points based on the density of the surrounding region. Extending from DBSCAN, it builds a hierarchy of density-based clusters and choose the most stable clusters out of them.
+Here we choose three algorithms for clustering task: K-Means from partition-based approach, HDBSCAN from density-based clustering category and GMM from model-based approach.
+
+*K-Means*   K-Means @lloyd1982least @macqueen1967multivariate is an unsupervised, partition-based clustering algorithm that divides data into $K$ groups based on similarity. It is one of the simplest, fastest, and most widely used in real world. The main idea of K-Means is to find K cluster centers (centroid) such that each data point belongs to the cluster with closest centroid by minizing the Within-Cluster Sum of Squares (WCSS) which is calculated by summing the squared Euclidean distance between each data point ($x_i$) and the centroid ($mu_i$) of the assign cluster ($C_k$).
+$
+  "WCSS" = sum_i^n min_(mu_j in C_k) norm(x_i - mu_j)_2
+$
+
+In this task, we run K-Means clustering with multiple options of $k$ ranging from 2 to 10 and use Silhouette Score to select the optimal number of clusters. As shown in @fig-kmeans-elbow-curve, the analysis reveals that $k = 4$ provides the best balance between cluster cohesion and separation, achieving a Silhouette Score of 0.4890. This suggests that the climate data naturally divides into four seasonal patterns, potentially representing spring, summer, autumn, and winter weather conditions.
+
+#figure(
+  image("kmeans_analysis.png"),
+  caption: [K-Means elbow curve],
+)<fig-kmeans-elbow-curve>
+
+#figure(
+  image("kmeans_clustering_visualization.png"),
+  caption: [K-Means Clustering Visualization],
+)<fig-kmeans-visualization>
+
+
+*HDBSCAN* HDBSCAN @campelloDensityBasedClusteringBased2013 is an algorithm that groups points based on the density of the surrounding region. Extending from DBSCAN, it builds a hierarchy of density-based clusters and selects the most stable clusters from them. Unlike K-Means, HDBSCAN does not require specifying the number of clusters in advance and can automatically identify outliers as noise points. The algorithm works by computing a minimum spanning tree of the mutual reachability distance, then extracting a hierarchy of clusters based on density thresholds, and finally selecting the most persistent clusters using a stability measure. In this task, we test different `min_cluster_size` parameters (10, 15, 20, 30, 50) and select the configuration with the highest Silhouette Score. The best configuration uses `min_cluster_size=10`, identifying 2 main clusters and 275 noise points (15.60% of the data).
+
+#figure(
+  image("hdbscan_clustering_visualization.png"),
+  caption: [HDBSCAN Clustering Visualization],
+)<fig-hdbscan-visualization>
+
+*GMM* Gaussian Mixture Model @reynoldsGMM2009 is a probabilistic, model-based clustering algorithm that assumes data is generated from a mixture of multiple Gaussian distributions. Unlike K-Means which assigns each point to exactly one cluster (hard assignment), GMM provides soft assignments by computing the probability that each point belongs to each cluster. This is particularly useful when cluster boundaries are uncertain or when points may belong to multiple clusters. The algorithm uses the Expectation-Maximization (EM) algorithm to iteratively estimate the parameters (means, covariances, and mixture weights) of the Gaussian components. For cluster $k$, the probability that a data point $bold(x)$ belongs to that cluster is:
+$
+  P(k | bold(x)) = frac(pi_k cal(N)(bold(x) | bold(mu)_k, bold(Sigma)_k), sum_(j=1)^K pi_j cal(N)(bold(x) | bold(mu)_j, bold(Sigma)_j))
+$
+where $pi_k$ is the mixing coefficient, $bold(mu)_k$ is the mean vector, and $bold(Sigma)_k$ is the covariance matrix. We use `covariance_type='full'` to allow elliptical cluster shapes, which is more appropriate for climate data than spherical clusters. Model selection is performed using Bayesian Information Criterion (BIC) and Akaike Information Criterion (AIC), with lower values indicating better models. As shown in @fig-gmm-analysis, the best configuration uses 2 components.
+
+#figure(
+  image("gmm_analysis.png"),
+  caption: [GMM model selection using BIC, AIC, and Silhouette Score],
+)<fig-gmm-analysis>
+
+#figure(
+  image("gmm_clustering_visualization.png"),
+  caption: [GMM Clustering Visualization with Gaussian ellipses showing the probabilistic cluster boundaries],
+)<fig-gmm-visualization>
+
+=== Evaluation and Comparison
+
+To evaluate the performance of the three clustering algorithms, we use three widely-adopted metrics: Silhouette Score, Davies-Bouldin Index, and Calinski-Harabasz Index. The Silhouette Score measures how similar a point is to its own cluster compared to other clusters, with values ranging from -1 to 1 (higher is better). The Davies-Bouldin Index evaluates the average similarity between each cluster and its most similar cluster, where lower values indicate better separation. The Calinski-Harabasz Index (also known as Variance Ratio Criterion) measures the ratio of between-cluster dispersion to within-cluster dispersion, with higher values indicating better-defined clusters.
+
+#figure(
+  table(
+    columns: (auto, auto, auto, auto),
+    align: (left, center, center, center),
+    table.header([*Metric*], [*K-Means*], [*HDBSCAN*], [*GMM*]),
+    [Number of Clusters], [4], [2], [3],
+    [Silhouette Score], [0.4890], [0.5704], [0.1909],
+    [Davies-Bouldin Index], [0.8551], [0.4255], [1.6062],
+    [Calinski-Harabasz Score], [982.21], [85.45], [490.63],
+  ),
+  caption: [Comparison of clustering algorithms performance on Basel climate dataset],
+)<fig-comparison-table>
+
+As shown in @fig-comparison-table, HDBSCAN achieved the best overall performance with the highest Silhouette Score (0.5704) and the lowest Davies-Bouldin Index (0.4255), indicating superior cluster quality and separation. HDBSCAN identified 2 main clusters with 275 noise points (15.60% of the data), suggesting the presence of two dominant climate patterns (summer and winter) along with transitional or extreme weather events . The noise points represent anomalous weather conditions that HDBSCAN appropriately separates rather than forcing into existing clusters, demonstrating the algorithm's robustness to outliers. K-Means, configured with 4 clusters based on silhouette analysis, achieved a moderate Silhouette Score (0.4890) and the highest Calinski-Harabasz Score (982.21), indicating well-defined cluster centers. However, its Davies-Bouldin score (0.8551) was higher than HDBSCAN, suggesting more overlap between clusters. This is expected given K-Means' assumption of spherical clusters and its sensitivity to the bimodal and skewed distributions present in climate data. GMM, with 3 components, performed poorly compared to the other algorithms, achieving the lowest Silhouette Score (0.1909) and the highest Davies-Bouldin Index (1.6062), indicating poorly separated clusters with significant overlap.
+
+The choice of algorithm depends on the specific analytical goals. HDBSCAN is the most suitable for this climate dataset, effectively identifying the two main seasonal patterns while robustly handling outliers and extreme weather events. The results suggest that the Basel climate data exhibits two primary seasonal clusters with a substantial number of transitional or anomalous days, validating the use of density-based clustering approaches for meteorological data analysis.
 
 = Task 2: Image Processing with Deep Neural Networks (DNNs)
 The purpose of this task is to effectively, thoroughly apply pre-trained DNNs for image clustering and classification tasks. In this task, we choose two datasets, i.e. Kaggle: Cats vs Dogs Dataset @catsVsDogs and Food101 @food101. Kaggle: Cats vs Dogs Dataset is a dataset providing a collection of photos about cats and dogs. Statistically, there are 12491 pictures of cat and 12470 images of dog. Food101 includes images of food. With over 100000 files, it is a good set of data for image clustering and classification training.
@@ -222,10 +287,6 @@ The purpose of this task is to effectively, thoroughly apply pre-trained DNNs fo
 
 *Normalization* Normalization is a process that rescale pixel values to a specific range (usually 0-255 to [0-1] range).
 
-#figure(
-  image("food101-image-preprocessed-samples.png"),
-  caption: [Image of some preprocessed samples],
-)<fig-food101-image-preprocessed-samples>
 
 === Clustering
 
@@ -270,7 +331,8 @@ The purpose of this task is to effectively, thoroughly apply pre-trained DNNs fo
   image("food101-corrupt_size.png"),
   caption: "Code and result for detecting corrupted images and sizes in Food101 dataset.",
 )<fig-food101-corrupt_size>
-= Table and Figures <app-table>
+= Tables, Figures and Algorithms <app-table>
+
 
 #figure(
   table(
@@ -302,4 +364,5 @@ The purpose of this task is to effectively, thoroughly apply pre-trained DNNs fo
   image("dist_all_features.png"),
   caption: "Distribution of all features",
 )<fig-distribution>
+
 
