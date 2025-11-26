@@ -123,7 +123,7 @@ $
 After detecting anomalies with LOF algorithm, a total of 0.74% of samples are marked as outliers. Instead of remove them, which may represent actual rare extreme events, we cap them under its 1st and 99th percentile which is called Winsorization technique. It will limit the effect of extreme values while preserving consistency of the distribution.
 
 #figure(
-  image("feature_scaling.png"),
+  image("images/feature_scaling.png"),
   caption: [the differences between before and after scaling. Before scaling, the data distributions are varied among features but after applying Robust Scaling method, we can see mostly distributions now look similar.],
 )<fig-befor-after-scaling>
 
@@ -196,12 +196,12 @@ where $"cov"(X, Y)$ is the covariance between $X$ and $Y$ and $sigma_X$, $sigma_
 We use Principal Component Analysis (PCA) for dimensionality reduction. With `n_components = 4`, we capture approximately 90% information (@fig-pca). It helps reduce a cost of computation of the model.
 
 #figure(
-  image("corr.png"),
+  image("images/corr.png"),
   caption: [Correlation between features],
 )<fig-corr>
 
 #figure(
-  image("pca_explained.png"),
+  image("images/pca_explained.png"),
   caption: [PCA Explained Variance],
 )<fig-pca>
 
@@ -221,12 +221,12 @@ $
 In this task, we run K-Means clustering with multiple options of $k$ ranging from 2 to 10 and use Silhouette Score to select the optimal number of clusters. As shown in @fig-kmeans-elbow-curve, the analysis reveals that $k = 4$ provides the best balance between cluster cohesion and separation, achieving a Silhouette Score of 0.4890. This suggests that the climate data naturally divides into four seasonal patterns, potentially representing spring, summer, autumn, and winter weather conditions.
 
 #figure(
-  image("kmeans_analysis.png"),
+  image("images/kmeans_analysis.png"),
   caption: [K-Means elbow curve],
 )<fig-kmeans-elbow-curve>
 
 #figure(
-  image("kmeans_clustering_visualization.png"),
+  image("images/kmeans_clustering_visualization.png"),
   caption: [K-Means Clustering Visualization],
 )<fig-kmeans-visualization>
 
@@ -234,7 +234,7 @@ In this task, we run K-Means clustering with multiple options of $k$ ranging fro
 *HDBSCAN* HDBSCAN @campelloDensityBasedClusteringBased2013 is an algorithm that groups points based on the density of the surrounding region. Extending from DBSCAN, it builds a hierarchy of density-based clusters and selects the most stable clusters from them. Unlike K-Means, HDBSCAN does not require specifying the number of clusters in advance and can automatically identify outliers as noise points. The algorithm works by computing a minimum spanning tree of the mutual reachability distance, then extracting a hierarchy of clusters based on density thresholds, and finally selecting the most persistent clusters using a stability measure. In this task, we test different `min_cluster_size` parameters (10, 15, 20, 30, 50) and select the configuration with the highest Silhouette Score. The best configuration uses `min_cluster_size=10`, identifying 2 main clusters and 275 noise points (15.60% of the data).
 
 #figure(
-  image("hdbscan_clustering_visualization.png"),
+  image("images/hdbscan_clustering_visualization.png"),
   caption: [HDBSCAN Clustering Visualization],
 )<fig-hdbscan-visualization>
 
@@ -245,12 +245,12 @@ $
 where $pi_k$ is the mixing coefficient, $bold(mu)_k$ is the mean vector, and $bold(Sigma)_k$ is the covariance matrix. We use `covariance_type='full'` to allow elliptical cluster shapes, which is more appropriate for climate data than spherical clusters. Model selection is performed using Bayesian Information Criterion (BIC) and Akaike Information Criterion (AIC), with lower values indicating better models. As shown in @fig-gmm-analysis, the best configuration uses 2 components.
 
 #figure(
-  image("gmm_analysis.png"),
+  image("images/gmm_analysis.png"),
   caption: [GMM model selection using BIC, AIC, and Silhouette Score],
 )<fig-gmm-analysis>
 
 #figure(
-  image("gmm_clustering_visualization.png"),
+  image("images/gmm_clustering_visualization.png"),
   caption: [GMM Clustering Visualization with Gaussian ellipses showing the probabilistic cluster boundaries],
 )<fig-gmm-visualization>
 
@@ -298,37 +298,37 @@ The purpose of this task is to effectively, thoroughly apply pre-trained DNNs fo
 #show: appendix
 = Code <app-code>
 #figure(
-  image("basel_missing_value.png"),
+  image("images/basel_missing_value.png"),
   caption: [Code and result of detecting missing value.],
 )<missing-val>
 
 #figure(
-  image("mod_zscore.png"),
+  image("images/mod_zscore.png"),
   caption: [Modified Z-score code and result],
 )<fig-mod-zscore>
 
 #figure(
-  image("lof.png"),
+  image("images/lof.png"),
   caption: [Local Outlier Factor (LOF)],
 )<fig-mod-zscore>
 
 #figure(
-  image("outlier_treatment.png"),
+  image("images/outlier_treatment.png"),
   caption: [Capping extreme values],
 )<fig-outlier-treatment>
 
 #figure(
-  image("feature_scaling_code.png"),
+  image("images/feature_scaling_code.png"),
   caption: [Feature Scaling],
 )<fig-feature_scaling>
 
 #figure(
-  image("remove_high_corr.png"),
+  image("images/remove_high_corr.png"),
   caption: [Remove high correlated columns],
 )<fig-remove-high-corr>
 
 #figure(
-  image("food101-corrupt_size.png"),
+  image("images/food101-corrupt_size.png"),
   caption: "Code and result for detecting corrupted images and sizes in Food101 dataset.",
 )<fig-food101-corrupt_size>
 = Tables, Figures and Algorithms <app-table>
@@ -361,7 +361,7 @@ The purpose of this task is to effectively, thoroughly apply pre-trained DNNs fo
 )<column-name>
 
 #figure(
-  image("dist_all_features.png"),
+  image("images/dist_all_features.png"),
   caption: "Distribution of all features",
 )<fig-distribution>
 
