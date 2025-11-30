@@ -43,8 +43,8 @@
   figure-supplement: [Fig.],
 )
 
-= Task 1: Basel Climate Dataset
-The Basel Climate Dataset (ClimateDataBasel.csv) is a subset of publicly available weather data from Basel, Switzerland, obtained from @meteoblue. It contains 1,763 records with 18 features collected during the summer and winter seasons from 2010 to 2019.
+= Task 1: Basel Climate Dataset<task1>
+The Basel Climate Dataset (ClimateDataBasel.csv) is a subset of publicly available weather data from Basel, Switzerland, obtained by Meteoblue #footnote[https://www.meteoblue.com/en/weather/week/galgate_united-kingdom_2648924]. It contains 1,763 records with 18 features collected during the summer and winter seasons from 2010 to 2019.
 
 As the dataset lacks column headers, assigning appropriate names to each feature is necessary to ensure readability, consistency, and efficient data handling during analysis. The complete list of column names and their meanings is provided in @column-name .
 
@@ -77,7 +77,7 @@ The median is less sentitive to outliers than the mean and the IQR measure the s
 #figure(
   table(
     columns: (auto, auto, auto),
-    table.header([Method], [Advantage], [Disadvantages]),
+    table.header([*Method*], [*Advantage*], [*Disadvantages*]),
     [Z-score Standardization],
     [
       Centres data to mean 0 and variance 1\
@@ -123,14 +123,9 @@ $
 After detecting anomalies with LOF algorithm, a total of 0.74% of samples are marked as outliers. Instead of remove them, which may represent actual rare extreme events, we cap them under its 1st and 99th percentile which is called Winsorization technique. It will limit the effect of extreme values while preserving consistency of the distribution.
 
 #figure(
-  image("images/feature_scaling.png"),
-  caption: [the differences between before and after scaling. Before scaling, the data distributions are varied among features but after applying Robust Scaling method, we can see mostly distributions now look similar.],
-)<fig-befor-after-scaling>
-
-#figure(
   table(
     columns: (auto, auto, auto),
-    table.header([Method / Technique], [Advantages (Strengths)], [Disadvantages (Limitations)]),
+    table.header([*Method / Technique*], [*Advantages (Strengths)*], [*Disadvantages (Limitations)*]),
 
     [Local Outlier Factor (LOF) — Neighborhood-based],
     [
@@ -193,8 +188,6 @@ $
 $
 where $"cov"(X, Y)$ is the covariance between $X$ and $Y$ and $sigma_X$, $sigma_Y$ are the standard deviations of $X$ and $Y$, respectively. The value of $r$ is in range $[-1, 1]$. The higher in value of $r$ the tighter in relationship between $X$ and $Y$. As shown in @fig-corr, temperature features (i.e. `temp_min_c`, `temp_mean_c`, `temp_max_c`) are highly correlated with each other. The pressure features (i.e. `slp_min_hpa`, `slp_max_hpa`, `slp_mean_hpa`) are also correlated. Similarly, wind and gust features are correlated. The rest features are weakly correlated. From this heatmap, we can easily identify which features providing similar information and which are unique. It is useful for feature selection and avoiding redundancy. From this information, we can easily remove all high correlated columns (see code implemented and columns removed in @fig-remove-high-corr).
 
-We use Principal Component Analysis (PCA) for dimensionality reduction. With `n_components = 4`, we capture approximately 90% information (@fig-pca). It helps reduce a cost of computation of the model.
-
 #figure(
   image("images/corr.png"),
   caption: [Correlation between features],
@@ -204,6 +197,14 @@ We use Principal Component Analysis (PCA) for dimensionality reduction. With `n_
   image("images/pca_explained.png"),
   caption: [PCA Explained Variance],
 )<fig-pca>
+
+#figure(
+  image("images/feature_scaling.png"),
+  caption: [the differences between before and after scaling. Before scaling, the data distributions are varied among features but after applying Robust Scaling method, we can see mostly distributions now look similar.],
+)<fig-befor-after-scaling>
+
+We use Principal Component Analysis (PCA) for dimensionality reduction. With `n_components = 4`, we capture approximately 90% information (@fig-pca). It helps reduce a cost of computation of the model.
+
 
 == Clustering
 
@@ -276,19 +277,37 @@ As shown in @fig-comparison-table, HDBSCAN achieved the best overall performance
 The choice of algorithm depends on the specific analytical goals. HDBSCAN is the most suitable for this climate dataset, effectively identifying the two main seasonal patterns while robustly handling outliers and extreme weather events. The results suggest that the Basel climate data exhibits two primary seasonal clusters with a substantial number of transitional or anomalous days, validating the use of density-based clustering approaches for meteorological data analysis.
 
 = Task 2: Image Processing with Deep Neural Networks (DNNs)
-The purpose of this task is to effectively, thoroughly apply pre-trained DNNs for image clustering and classification tasks. In this task, we choose two datasets, i.e. Kaggle: Cats vs Dogs Dataset @catsVsDogs and Food101 @food101. Kaggle: Cats vs Dogs Dataset is a dataset providing a collection of photos about cats and dogs. Statistically, there are 12491 pictures of cat and 12470 images of dog. Food101 includes images of food. With over 100000 files, it is a good set of data for image clustering and classification training.
+The purpose of this task is to effectively, thoroughly apply pre-trained DNNs for image clustering and classification tasks. In this task, we choose two datasets, i.e. Kaggle: Cats vs Dogs Dataset @catsVsDogs and Food101 @food101. Kaggle: Cats vs Dogs Dataset is a dataset providing a collection of photos about cats and dogs. Statistically, there are 12491 pictures of cat and 12470 images of dog. Food101 includes images of food. With over 100000 files, it is a good set of data for image clustering and classification training. We also choose DINOV2 @oquab2023dinov2 (dinov2_vits14 model via Pytorch Hub) and DenseNet @Huang2016DenselyCC (DenseNet-121 model pre-trained on ImageNet) as our DNN models. DINOV2, developed by Meta AI Research (or FAIR), is a self-supervised vision model trained using self-distillation and self-supervised learning which means it can learn from unlabeled images. DenseNet is a CNN architecture, well-known for its densen connectivity pattern, where each layers receives the feature maps of all previous layers as input.
 
-== Dataset 1: Food101
-=== Data preprocessing
+#figure(
+  image("images/densenet_architecture.png"),
+  caption: [Illutration of DenseNet architecture. Image taken from @sujawat2022.],
+)<fig-densenet-architecture>
 
-*Image Cleaning* As shown in @fig-food101-corrupt_size, all images are in good quality with various sizes. Therefore we need to resize these images for the sake of consistent input for aftward downstream analysis and model. Here we resize all images to $256 times 256$ dimension and save in `image_resized` folder.
+== Data Preprocessing
+In this project, we resizes images to $256 times 256$ using interpolation mode Bilinear, followed by a center crop of $224$. After that, they will be normalized using $"mean" = [0.485, 0.456, 0.406]$ and $"std" = [0.229, 0.224, 0.225]$. These values are industry-standard and implemented in torchvision's preset for classification. #footnote[https://github.com/pytorch/vision/blob/main/references/classification/presets.py#L47-L69]
 
-*Noise Removal* Apply Gaussian filter to reduce noise in images.
+== Feature Extraction
+Image feature extraction is a process of converting an image into a set of meaningful numerical features that capture important visual information such as shapes, textures, colors. In this task, we use deep learning-based model for extracting features. Deep learning-based feature extraction. Deep neural networks (i.e. CNN and Transformers) is suitable for this step because of their ability to learn hierarchical, sementically rich representations directly from pixels. A DNN informative outputs are essential and useful for downstream processes like clustering or classification.
 
-*Normalization* Normalization is a process that rescale pixel values to a specific range (usually 0-255 to [0-1] range).
+As you can see in @fig-densenet-architecture, the last layer of DenseNet-121 is the classification layer. Thus, to use the model for feature extraction, we need to drop the last layer. With DINOV2, we can use it as normal. After the process of extracting feature is done, we save all results into `.npy` files for later use.
 
+The same as @task1, we use PCA technique for dimensionality reduction. We retain 95% of the variance, reducing the Food101 feature vectors from 1024 to 14 dimensions with DenseNet-121 and from 384 to 202 dimensions with DINOv2. Regarding Cats vs Dogs dataset, we reduce feature vectors from 1024 to 14 dimensions with DenseNet-121 and from 384 to 197 dimensions with DINOV2 (shown in @fig-task2-dim-reduction).
 
-=== Clustering
+#figure(
+  table(
+    columns: (auto, auto, auto),
+    align: (center, center, center),
+    table.header(
+      [*Dataset - Model*], [*Original Dimensions*], [*Reduced Dimensions*],
+      [Food101 - DenseNet-121], [1024], [14],
+      [Food101 - DINOV2], [384], [202],
+      [Cats vs Dogs - DenseNet-121], [1024], [14],
+      [Cats vs Dogs - DINOV2], [384], [197],
+    ),
+  ),
+  caption: [Before and after reduction dimensions of two datasets with two models],
+)<fig-task2-dim-reduction>
 
 
 #bibliography("refs.bib")
@@ -328,9 +347,9 @@ The purpose of this task is to effectively, thoroughly apply pre-trained DNNs fo
 )<fig-remove-high-corr>
 
 #figure(
-  image("images/food101-corrupt_size.png"),
-  caption: "Code and result for detecting corrupted images and sizes in Food101 dataset.",
-)<fig-food101-corrupt_size>
+  image("images/image_preprocessing.png"),
+  caption: "Model import and images preprocessing using model transform.",
+)<fig-image-preprocessing>
 = Tables, Figures and Algorithms <app-table>
 
 
