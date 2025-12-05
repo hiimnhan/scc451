@@ -257,7 +257,7 @@ where $pi_k$ is the mixing coefficient, $bold(mu)_k$ is the mean vector, and $bo
 
 === Evaluation and Comparison
 
-To evaluate the performance of the three clustering algorithms, we use three widely-adopted metrics: Silhouette Score, Davies-Bouldin Index, and Calinski-Harabasz Index. The Silhouette Score measures how similar a point is to its own cluster compared to other clusters, with values ranging from -1 to 1 (higher is better). The Davies-Bouldin Index evaluates the average similarity between each cluster and its most similar cluster, where lower values indicate better separation. The Calinski-Harabasz Index (also known as Variance Ratio Criterion) measures the ratio of between-cluster dispersion to within-cluster dispersion, with higher values indicating better-defined clusters.
+To evaluate the performance of the three clustering algorithms, we use three widely-adopted metrics: Silhouette Score, Davies-Bouldin Index. The Silhouette Score measures how similar a point is to its own cluster compared to other clusters, with values ranging from -1 to 1 (higher is better). The Davies-Bouldin Index evaluates the average similarity between each cluster and its most similar cluster, where lower values indicate better separation.
 
 #figure(
   table(
@@ -267,14 +267,13 @@ To evaluate the performance of the three clustering algorithms, we use three wid
     [Number of Clusters], [4], [2], [3],
     [Silhouette Score], [0.4890], [0.5704], [0.1909],
     [Davies-Bouldin Index], [0.8551], [0.4255], [1.6062],
-    [Calinski-Harabasz Score], [982.21], [85.45], [490.63],
   ),
   caption: [Comparison of clustering algorithms performance on Basel climate dataset],
 )<fig-comparison-table>
 
-As shown in @fig-comparison-table, HDBSCAN achieved the best overall performance with the highest Silhouette Score (0.5704) and the lowest Davies-Bouldin Index (0.4255), indicating superior cluster quality and separation. HDBSCAN identified 2 main clusters with 275 noise points (15.60% of the data), suggesting the presence of two dominant climate patterns (summer and winter) along with transitional or extreme weather events . The noise points represent anomalous weather conditions that HDBSCAN appropriately separates rather than forcing into existing clusters, demonstrating the algorithm's robustness to outliers. K-Means, configured with 4 clusters based on silhouette analysis, achieved a moderate Silhouette Score (0.4890) and the highest Calinski-Harabasz Score (982.21), indicating well-defined cluster centers. However, its Davies-Bouldin score (0.8551) was higher than HDBSCAN, suggesting more overlap between clusters. This is expected given K-Means' assumption of spherical clusters and its sensitivity to the bimodal and skewed distributions present in climate data. GMM, with 3 components, performed poorly compared to the other algorithms, achieving the lowest Silhouette Score (0.1909) and the highest Davies-Bouldin Index (1.6062), indicating poorly separated clusters with significant overlap.
+As shown in @fig-comparison-table, HDBSCAN achieved the best overall performance with the highest Silhouette Score (0.5704) and the lowest Davies-Bouldin Index (0.4255), indicating outperforming cluster quality and separation. HDBSCAN identified 2 main clusters with 275 noise points (15.6% of the data), suggesting the presence of two climate patterns (summer and winter) along with transitional or extreme weather events. K-Means, configured with 4 clusters based on silhouette analysis, achieved a moderate Silhouette Score (0.4890). However, its Davies-Bouldin score (0.8551) was higher than HDBSCAN, suggesting more overlap between clusters. This is expected given K-Means' assumption of spherical clusters and its sensitivity to the bimodal and skewed distributions present in climate data. GMM, with 3 components, performed poorly compared to the other algorithms, achieving the lowest Silhouette Score (0.1909) and the highest Davies-Bouldin Index (1.6062), indicating poorly separated clusters with significant overlap.
 
-The choice of algorithm depends on the specific analytical goals. HDBSCAN is the most suitable for this climate dataset, effectively identifying the two main seasonal patterns while robustly handling outliers and extreme weather events. The results suggest that the Basel climate data exhibits two primary seasonal clusters with a substantial number of transitional or anomalous days, validating the use of density-based clustering approaches for meteorological data analysis.
+HDBSCAN is the most suitable for this climate dataset, effectively identifying the two main seasonal patterns while robustly handling outliers and extreme weather events. The results suggest that the Basel climate data exhibits two primary seasonal clusters with a substantial number of transitional or anomalous days, which is verified by the fact that the dataset was collected in winters and summers.
 
 = Task 2: Image Processing with Deep Neural Networks (DNNs)
 The purpose of this task is to effectively, thoroughly apply pre-trained DNNs for image clustering and classification tasks. In this task, we choose two datasets, i.e. Kaggle: Cats vs Dogs Dataset @catsVsDogs and Food101 @food101. Kaggle: Cats vs Dogs Dataset is a dataset providing a collection of photos about cats and dogs. Statistically, there are 12491 pictures of cat and 12470 images of dog. Food101 includes images of food. With over 100000 files, it is a good set of data for image clustering and classification training. We also choose DINOV2 @oquab2023dinov2 (dinov2_vits14 model via Pytorch Hub) and DenseNet @Huang2016DenselyCC (DenseNet-121 model pre-trained on ImageNet) as our DNN models. DINOV2, developed by Meta AI Research (or FAIR), is a self-supervised vision model trained using self-distillation and self-supervised learning which means it can learn from unlabeled images. DenseNet is a CNN architecture, well-known for its densen connectivity pattern, where each layers receives the feature maps of all previous layers as input.
@@ -287,7 +286,7 @@ The purpose of this task is to effectively, thoroughly apply pre-trained DNNs fo
 == Data Preprocessing
 In this project, we resizes images to $256 times 256$ using interpolation mode Bilinear, followed by a center crop of $224$. After that, they will be normalized using $"mean" = [0.485, 0.456, 0.406]$ and $"std" = [0.229, 0.224, 0.225]$. These values are industry-standard and implemented in torchvision's preset for classification. #footnote[https://github.com/pytorch/vision/blob/main/references/classification/presets.py#L47-L69]
 
-== Feature Extraction
+== Feature Extraction<feature-extraction>
 Image feature extraction is a process of converting an image into a set of meaningful numerical features that capture important visual information such as shapes, textures, colors. In this task, we use deep learning-based model for extracting features. Deep learning-based feature extraction. Deep neural networks (i.e. CNN and Transformers) is suitable for this step because of their ability to learn hierarchical, sementically rich representations directly from pixels. A DNN informative outputs are essential and useful for downstream processes like clustering or classification.
 
 As you can see in @fig-densenet-architecture, the last layer of DenseNet-121 is the classification layer. Thus, to use the model for feature extraction, we need to drop the last layer. With DINOV2, we can use it as normal. After the process of extracting feature is done, we save all results into `.npy` files for later use.
@@ -309,6 +308,72 @@ The same as @task1, we use PCA technique for dimensionality reduction. We retain
   caption: [Before and after reduction dimensions of two datasets with two models],
 )<fig-task2-dim-reduction>
 
+== Clustering
+In clustering task, we use K-Means clustering method. $k=101$ and $k=2$ are used for Food101 dataset and Cats vs. Dgos dataset, respectively. @fig-task2-cluster-viz shows all clusters in 2D with 400 samples. @fig-task2-cluster-score shows all related scores of K-Means cluster method.
+#figure(
+  image("images/clustering_all_2x2_grid.png"),
+  caption: [K-Means Cluster of all combinations of datasets and models. We use 400 samples for visualization.],
+)<fig-task2-cluster-viz>
+
+#figure(
+  table(
+    columns: (90pt, auto, auto, auto, auto),
+    align: (center, center, center, center, center),
+    table.header(
+      [*Dataset - Model*], [*k*], [*Silhouette score*], [*Davies-Bouldin Index*], [*Calinski-Harabasz Score*],
+      [Food101 - DenseNet-121], [101], [0.0986], [1.6199], [5728.69],
+      [Food101 - DINOV2], [101], [0.0904], [2.6753], [888.37],
+      [Cats vs. Dogs - DenseNet-121], [2], [0.3468], [1.0796], [18609.98],
+      [Cats vs. Dogs - DINOV2], [2], [0.0973], [3.0443], [2671.85],
+    ),
+  ),
+  caption: [Silhouette score, Davies-Bouldin index and Calinski-Harabasz score of all K-Means clusters.],
+)<fig-task2-cluster-score>
+
+@fig-task2-cluster-viz shows how different feature extractors have different clustering representations with the same dataset. The cluster of the DenseNet-121 model with Food101 dataset (shown at top-left) forms a cloud with no obvious structure. There is no tight groups suggesting features are not clearly seperating categories. It can be explained as DenseNet-121 model is trained for ImageNet classification so it may not work well to this dataset. With the same dataset, however, DINOV2 model does slightly better (shown in top-right). Although data points are still overlapping but the structure is more compact with several local groupings existing and the distribution is less noisy. The bottom-left visualization of Cats vs. Dogs dataset with DenseNet-121 model still shows noisy display. The clusters is heavily overlapping. However, the DINOV2 model performs significantly good with this dataset. The two clusters are clearly separated with clean left and right grouping. There is no overlap between clusters and there is no noise too.
+
+By these visualizations, DINOV2 performs better than DenseNet-121 in all cases.
+
+== Classification
+In this task, we add a linear fine-tunable layer to the DNN used in @feature-extraction. This layer is added to perform the classification task. The goal of this section is to scrutinize the performance of the classification layer including all classification metrics i.e. precision/recall, F1 score and accuracy. Moreover, we also measure its computational complexity on different machines (see @fig-spec-machine).
+
+The linear layer is a multilayer perceptron (MLP) with input layer equals to the dimension of extracted features connecting to hidden layer of size 500 with ReLU activation function. Utimately, it returns the probabilites of all classes via Softmax function (see detailed implementation in @fig-linear-classifer). We train the model with a batch of size 128 over 200 epochs.
+
+#figure(
+  table(
+    columns: (90pt, auto, auto, auto),
+    align: (center, center, center, center),
+    table.header(
+      [*Dataset - Model*], [*Accuracy*], [*Precision*], [*F1*],
+      [Food101 - DenseNet-121], [0.017], [0.0004], [0.0008],
+      [Food101 - DINOV2], [0.0197], [0.0004], [0.0008],
+      [Cats vs. Dogs - DenseNet-121], [0.6593], [0.0.6593], [0.6592],
+      [Cats vs. Dogs - DINOV2], [0.998], [0.998], [0.998],
+    ),
+  ),
+  caption: [Accuracy, Precision and F1 score of all datasets and models with Linear Classifier.],
+)<fig-task2-classifier-linear-score>
+
+As shown in @fig-task2-classifier-linear-score, linear classifier performs poorly with Food101 dataset whilst significantly better with Cats vs. Dogs dataset. It can be explained that the first dataset includes multiple classes which a linear layer cannot clearly separate. The second dataset has only two classes which is a ideal case for linear classifier.
+
+Thus, we decide to apply Support Vector Machines (SVM) algorithm for the Food101 dataset. SVM is suitable because it can handle multiclass classification. SVM creates a hyperplane in multidimensional space to split different classes then tries to maximize the margin of it that best clusters the dataset. We implement the algorithm with _rbf_ kernel and `C=1.0`.
+
+@fig-task2-classifier-svm-score show the scores of classification using SVM algorithm. While model DenseNet-121 has poor result in all scores (0.1162, 0.1003, 0.0973 for accuracy, precision, F1 score, respectively), DINOV2 gets all high scores, mostly over 0.8 (0.8640 for accuracy, 0.8655 for precision, 0.8643 for F1). It indicates that with the same classifer, it is possible that we get different results. The scores depend on the feature extraction methods we use. In this project, we have observed outperforming performance of DINOV2 model in feature extraction task compared to DenseNet-121 model.
+
+#figure(
+  table(
+    columns: (90pt, auto, auto, auto),
+    align: (center, center, center, center),
+    table.header(
+      [*Model*], [*Accuracy*], [*Precision*], [*F1*],
+      [DenseNet-121], [0.1162], [0.1003], [0.0973],
+      [DINOV2], [0.8640], [0.8655], [0.8643],
+    ),
+  ),
+  caption: [Accuracy, Precision and F1 score of Food101 dataset and two models with SVM algorithm.],
+)<fig-task2-classifier-svm-score>
+
+#pagebreak()
 
 #bibliography("refs.bib")
 
@@ -350,6 +415,41 @@ The same as @task1, we use PCA technique for dimensionality reduction. We retain
   image("images/image_preprocessing.png"),
   caption: "Model import and images preprocessing using model transform.",
 )<fig-image-preprocessing>
+
+#figure(
+  image("images/linear_classifier.png"),
+  caption: "Implementation of Linear Classifier",
+)<fig-linear-classifer>
+
+#figure(
+  image("images/f_densenet_linear.png"),
+  caption: "Classification scores of dataset Food101 and model DenseNet-121 with Linear Layer Classifier",
+)<f_densenet_linear>
+
+#figure(
+  image("images/f_dino_linear.png"),
+  caption: "Classification scores of dataset Food101 and model DINOV2 with Linear Layer Classifier",
+)<f_dino_linear>
+
+#figure(
+  image("images/cd_densenet_linear.png"),
+  caption: "Classification scores of dataset Cats vs. Dogs and model DenseNet-121 with Linear Layer Classifier",
+)<cd_densenet_linear>
+
+#figure(
+  image("images/cd_dino_linear.png"),
+  caption: "Classification scores of dataset Cats vs Dogs and model DINOV2 with Linear Layer Classifier",
+)<cd_dino_linear>
+
+#figure(
+  image("images/f_densenet_svm.png"),
+  caption: "Classification scores of dataset Food101 and model DenseNet-121 with SVM",
+)<f_densenet_svm>
+
+#figure(
+  image("images/f_dino_svm.png"),
+  caption: "Classification scores of dataset Food101 and model DINOV2 with SVM",
+)<f_dino_svm>
 = Tables, Figures and Algorithms <app-table>
 
 
@@ -378,6 +478,16 @@ The same as @task1, we use PCA technique for dimensionality reduction. We retain
   ),
   caption: [Table columns name and their meaning],
 )<column-name>
+
+#figure(
+  table(
+    columns: (auto, auto, auto, auto),
+    table.header([*Name*], [*RAM*], [*GPU*], [*Torch backend*]),
+    [Apple Macbook Pro M4 Max], [32GB], [32-core built-in GPU], [mps],
+    [LU InfoLab workstatation], [30GB], [NVIDIA A2000 12GB], [cuda],
+  ),
+  caption: [Specifications of machines used in classification subtask in task 2.],
+)<fig-spec-machine>
 
 #figure(
   image("images/dist_all_features.png"),
